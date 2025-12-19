@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Placement Preparation Tracker</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+<nav class="navbar">
+  <div class="logo">PrepTracker</div>
+  <div class="nav-links">
+    <a href="#dashboard">Dashboard</a>
+    <a href="#dashboard">Progress</a>
+  </div>
+</nav>
+
+<!-- ================= HERO SECTION ================= -->
+<section class="hero">
+  <!-- moving background layers -->
+  <div class="stars"></div>
+  <div class="stars2"></div>
+
+  <div class="hero-content">
+    <h1>
+      <span class="accent">Placement</span> Preparation<br />
+      Tracker
+    </h1>
+
+    <p>
+      Track your DSA progress, daily goals,<br />
+      and consistency with a focused dashboard.
+    </p>
+
+    <div class="hero-actions">
+      <a href="#dashboard" class="primary">Start Tracking</a>
+      <a href="#dashboard" class="secondary">View Progress</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= DASHBOARD SECTION ================= -->
+<section class="app" id="dashboard">
+  <div class="dashboard">
+
+    <!-- ===== STATS ===== -->
+    <div class="stats">
+      <div class="stat-card">
+        <h4>Total Topics</h4>
+        <span id="totalTopics">0</span>
+      </div>
+
+      <div class="stat-card">
+        <h4>Completed</h4>
+        <span id="completedCount">0</span>
+      </div>
+
+      <div class="stat-card">
+        <h4>Prep Score</h4>
+        <span id="prepScore">0%</span>
+      </div>
+    </div>
+
+    <!-- ===== DSA TRACKER ===== -->
+    <div class="card full">
+      <h3>DSA Tracker</h3>
+
+      <input id="topic" placeholder="Topic name">
+      <input id="count" type="number" placeholder="Problems solved">
+      <select id="status">
+        <option>Not Started</option>
+        <option>In Progress</option>
+        <option>Completed</option>
+      </select>
+      <button onclick="addTopic()">Add</button>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Topic</th>
+            <th>Problems</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="topicTable"></tbody>
+      </table>
+    </div>
+
+    <!-- ===== DAILY GOAL ===== -->
+    <div class="card half">
+      <h3>Daily Goal</h3>
+      <input id="goalInput" placeholder="Today's goal">
+      <button onclick="completeGoal()">Complete Goal</button>
+
+      <p id="goalText"></p>
+      <p id="streakText"></p>
+    </div>
+
+    <!-- ===== ANALYTICS ===== -->
+    <div class="card half">
+      <h3>Analytics</h3>
+      <div class="chart-container">
+        <canvas id="statusChart"></canvas>
+      </div>
+    </div>
+
+    <!-- ===== WEEKLY CONSISTENCY ===== -->
+    <div class="card full">
+      <h3>Weekly Consistency</h3>
+      <div id="week"></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================= SCRIPTS ================= -->
+<script src="storage.js"></script>
+<script src="tracker.js"></script>
+<script src="analytics.js"></script>
+
+</body>
+</html>

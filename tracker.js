@@ -1,53 +1,34 @@
 const API_URL = 'http://127.0.0.1:5000';
 
-async function loadTopics() {
-    const response = await fetch(`${API_URL}/topics`);
-    const topics = await response.json();
-    
-    const tableBody = document.getElementById('topicTableBody');
-    tableBody.innerHTML = ''; 
+async function addRole() {
+    const role_name = document.getElementById('roleInput').value;
+    const company = document.getElementById('companyInput').value;
 
-    topics.forEach(t => {
-        const row = `
-            <tr>
-                <td>${t.topic_name}</td>
-                <td>${t.problems_solved}</td>
-                <td><span class="status-${t.status.toLowerCase().replace(' ', '-')}">${t.status}</span></td>
-                <td>
-                    <button class="delete-btn" onclick="deleteTopic(${t.id})">Delete</button>
-                </td>
-            </tr>`;
-        tableBody.innerHTML += row;
-    });
-}
-
-async function addTopic() {
-    const topic = document.getElementById('topicInput').value;
-    const count = document.getElementById('countInput').value;
-    const status = document.getElementById('statusInput').value;
-
-    if (!topic || !count) return alert("Please fill all fields");
-
-    const response = await fetch(`${API_URL}/add-topic`, {
+    await fetch(`${API_URL}/add-role`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, count, status })
+        body: JSON.stringify({ role_name, company })
     });
-
-    if (response.ok) {
-        document.getElementById('topicInput').value = '';
-        document.getElementById('countInput').value = '';
-        loadTopics();
-    }
+    
+    loadRoles(); // Refresh the display
 }
 
-async function deleteTopic(id) {
-    if (confirm("Are you sure?")) {
-        const response = await fetch(`${API_URL}/delete-topic/${id}`, {
-            method: 'DELETE'
-        });
-        if (response.ok) loadTopics();
-    }
+async function loadRoles() {
+    const response = await fetch(`${API_URL}/roles`);
+    const roles = await response.json();
+    
+    const grid = document.getElementById('rolesGrid');
+    grid.innerHTML = ''; 
+
+    roles.forEach(role => {
+        grid.innerHTML += `
+            <div class="role-card">
+                <h3>${role.role_name}</h3>
+                <p>@ ${role.company}</p>
+                <button onclick="viewTasks(${role.id})">Track Daily Prep</button>
+            </div>
+        `;
+    });
 }
 
-document.addEventListener('DOMContentLoaded', loadTopics);
+document.addEventListener('DOMContentLoaded', loadRoles);

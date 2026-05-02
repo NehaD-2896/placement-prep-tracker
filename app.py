@@ -40,3 +40,21 @@ def add_topic():
 
 if __name__ == '__main__':
     app.run(debug=True)
+# Add this to your existing app.py
+@app.route('/add-role', methods=['POST'])
+def add_role():
+    data = request.json
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO job_roles (role_name, company) VALUES (%s, %s)", 
+                   (data['role_name'], data['company']))
+    conn.commit()
+    return jsonify({"message": "Role added!"})
+
+@app.route('/get-roles', methods=['GET'])
+def get_roles():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM job_roles")
+    roles = cursor.fetchall()
+    return jsonify(roles)

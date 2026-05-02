@@ -1,47 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Placement Prep Tracker</title>
-  <link rel="stylesheet" href="style.css">
+    <title>Placement Tracker</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<nav class="navbar">
-  <div class="logo">PrepTracker</div>
-  <div class="nav-links">
-    <a href="dashboard.html">Dashboard</a>
-   
-  </div>
-</nav>
+<h1>Placement Prep Tracker</h1>
 
-<section class="hero">
+<!-- ADD ROLE -->
+<input id="roleInput" placeholder="Role name">
+<button onclick="addRole()">Add Role</button>
 
-  <!-- STAR BACKGROUND (REQUIRED) -->
-  <div class="stars"></div>
-  <div class="stars2"></div>
+<ul id="roleList"></ul>
 
-  <!-- MAIN CONTENT -->
-  <div class="hero-content">
-    <h1>
-      <span class="accent">Placement</span> Preparation Tracker
-    </h1>
+<hr>
 
-    <p>
-      Track your DSA goals, daily progress, and consistency<br />
-      with a focused, data-driven dashboard.
-    </p>
+<!-- APPLICATION -->
+<h3>Add Application</h3>
+<input id="roleIdApp" placeholder="Role ID">
+<input id="company" placeholder="Company">
+<input id="status" placeholder="Status">
+<input id="date" type="date">
+<button onclick="addApplication()">Add</button>
 
-    <div class="hero-actions">
-      <a href="dashboard.html" class="primary">Go to Dashboard</a>
-      
-    </div>
-  </div>
+<hr>
 
-  <!-- SCROLL HINT -->
-  <div class="scroll-indicator">SCROLL</div>
+<!-- DAILY PREP -->
+<h3>Daily Prep</h3>
+<input id="roleIdPrep" placeholder="Role ID">
+<input id="prepDate" type="date">
+<input id="dsa" placeholder="DSA solved">
+<input id="subjects" placeholder="Subjects">
+<input id="hours" placeholder="Hours">
+<button onclick="addPrep()">Add</button>
 
-</section>
-
+<script src="script.js"></script>
 </body>
 </html>

@@ -1,44 +1,27 @@
-# app.py — PrepBoard Flask Backend
-
-from flask import Flask, jsonify, request, send_from_directory
-import db as database
+from flask import Flask, request, jsonify, render_template
 import os
+import db as database
+from flask_cors import CORS
 
-app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), "static"))
+# template_folder='.' tells Flask to look for index.html in your main folder
+app = Flask(__name__, template_folder='.')
+CORS(app)
 
+# ── Home Route ────────────────────────────────────────────────────────────────
+@app.route('/')
+def home():
+    """Serves the main dashboard/home page."""
+    return render_template('index.html')
 
-# ── Page Routes ────────────────────────────────────────────────────────────────
-
-@app.route("/")
-def index():
-    return send_from_directory(app.static_folder, "index.html")
-
-
-@app.route("/dashboard")
-def dashboard():
-    return send_from_directory(app.static_folder, "dashboard.html")
-
-
-# ── Roles API ──────────────────────────────────────────────────────────────────
-
+# ── Roles API ─────────────────────────────────────────────────────────────────
 @app.route("/api/roles", methods=["GET"])
 def get_roles():
-    """Return all roles."""
-    return jsonify(database.fetch_all_roles())
-
-
-@app.route("/api/roles/<int:role_id>", methods=["GET"])
-def get_role(role_id):
-    """Return a single role by ID."""
-    role = database.fetch_role_by_id(role_id)
-    if not role:
-        return jsonify({"error": "Role not found"}), 404
-    return jsonify(role)
-
+    """Get all roles."""
+    return jsonify(database.fetch_roles())
 
 @app.route("/api/roles", methods=["POST"])
 def add_role():
-    """Create or fetch an existing role."""
+    """Add a new role."""
     data = request.get_json(silent=True) or {}
     name = data.get("name", "").strip()
     if not name:
@@ -46,14 +29,11 @@ def add_role():
     role = database.create_role(name)
     return jsonify(role), 201
 
-
-# ── Topics API ─────────────────────────────────────────────────────────────────
-
+# ── Topics API ────────────────────────────────────────────────────────────────
 @app.route("/api/roles/<int:role_id>/topics", methods=["GET"])
 def get_topics(role_id):
     """Get all topics for a role."""
     return jsonify(database.fetch_topics_by_role(role_id))
-
 
 @app.route("/api/topics", methods=["POST"])
 def add_topic():
@@ -63,7 +43,7 @@ def add_topic():
     missing = [k for k in required if not data.get(k)]
     if missing:
         return jsonify({"error": f"Missing fields: {', '.join(missing)}"}), 400
-
+    
     topic = database.create_topic(
         role_id=int(data["role_id"]),
         title=data["title"].strip(),
@@ -73,7 +53,6 @@ def add_topic():
         confidence=int(data.get("confidence", 0)),
     )
     return jsonify(topic), 201
-
 
 @app.route("/api/topics/<int:topic_id>", methods=["PUT"])
 def edit_topic(topic_id):
@@ -91,7 +70,6 @@ def edit_topic(topic_id):
         return jsonify({"error": "Topic not found"}), 404
     return jsonify(topic)
 
-
 @app.route("/api/topics/<int:topic_id>", methods=["DELETE"])
 def remove_topic(topic_id):
     """Delete a topic."""
@@ -100,17 +78,13 @@ def remove_topic(topic_id):
         return jsonify({"error": "Topic not found"}), 404
     return jsonify({"message": "Deleted successfully"})
 
-
 # ── Analytics API ──────────────────────────────────────────────────────────────
-
 @app.route("/api/roles/<int:role_id>/analytics", methods=["GET"])
 def get_analytics(role_id):
     """Return aggregated analytics for charts."""
     return jsonify(database.fetch_analytics(role_id))
 
-
 # ── Run ────────────────────────────────────────────────────────────────────────
-
 if __name__ == "__main__":
     database.init_db()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

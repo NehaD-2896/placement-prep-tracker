@@ -1,40 +1,666 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Placement Tracker</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PrepPal — Interview Prep Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:        #0d0e11;
+      --surface:   #16181e;
+      --surface2:  #1e2029;
+      --border:    #2a2d38;
+      --accent:    #f5a623;
+      --accent2:   #e8834a;
+      --text:      #e8e9ef;
+      --muted:     #6b7080;
+      --success:   #4caf7d;
+      --danger:    #e05c5c;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      overflow-x: hidden;
+    }
+
+    /* ── NOISE TEXTURE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+      pointer-events: none;
+    }
+
+    /* ── DIAGONAL GRID LINES ── */
+    body::after {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 60px,
+        rgba(245,166,35,0.025) 60px,
+        rgba(245,166,35,0.025) 61px
+      );
+      pointer-events: none;
+    }
+
+    .page-wrap {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 40px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(13,14,17,0.8);
+      backdrop-filter: blur(12px);
+      position: sticky; top: 0; z-index: 10;
+    }
+
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.3rem;
+      letter-spacing: -0.02em;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .logo span { color: var(--accent); }
+
+    .header-meta {
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex; align-items: center; gap: 16px;
+    }
+    .header-meta .dot {
+      width: 6px; height: 6px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity:1; } 50% { opacity:0.4; }
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 80px 40px 40px;
+      max-width: 860px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .hero-eyebrow {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .hero-eyebrow::before {
+      content: '';
+      display: inline-block;
+      width: 28px; height: 1px;
+      background: var(--accent);
+    }
+
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.6rem, 6vw, 4.4rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.035em;
+      margin-bottom: 18px;
+    }
+    .hero h1 em {
+      font-style: normal;
+      background: linear-gradient(100deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.7;
+      max-width: 480px;
+      font-weight: 300;
+    }
+
+    /* ── MAIN CONTENT ── */
+    .content-area {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 10px 40px 80px;
+      width: 100%;
+      flex: 1;
+    }
+
+    /* ── ROLE INPUT CARD ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 28px;
+      transition: border-color 0.2s;
+    }
+    .card:hover { border-color: rgba(245,166,35,0.3); }
+
+    .card-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .input-row {
+      display: flex; gap: 12px; align-items: stretch;
+    }
+    .role-input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .role-input::placeholder { color: var(--muted); }
+    .role-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(245,166,35,0.12);
+    }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 22px;
+      border-radius: 10px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 0.88rem;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+      white-space: nowrap;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #0d0e11;
+    }
+    .btn-primary:hover { box-shadow: 0 4px 20px rgba(245,166,35,0.35); }
+    .btn-ghost {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-sm { padding: 8px 14px; font-size: 0.78rem; }
+    .btn-danger { background: rgba(224,92,92,0.15); border: 1px solid rgba(224,92,92,0.3); color: var(--danger); }
+    .btn-danger:hover { background: rgba(224,92,92,0.25); }
+
+    .suggestions {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin-top: 14px;
+    }
+    .suggestion-chip {
+      padding: 6px 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .suggestion-chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(245,166,35,0.08);
+    }
+
+    /* ── ROLES LIST ── */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .roles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 14px;
+    }
+
+    .role-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+      animation: slideUp 0.3s ease both;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .role-card::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, var(--accent), var(--accent2));
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .role-card:hover {
+      border-color: rgba(245,166,35,0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.3);
+    }
+    .role-card:hover::before { opacity: 1; }
+
+    .role-card-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .role-icon {
+      width: 38px; height: 38px;
+      background: rgba(245,166,35,0.1);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .role-card-actions { display: flex; gap: 6px; opacity: 0; transition: opacity 0.2s; }
+    .role-card:hover .role-card-actions { opacity: 1; }
+
+    .role-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 6px;
+      letter-spacing: -0.01em;
+    }
+
+    .role-meta {
+      display: flex; gap: 14px;
+      font-size: 0.76rem;
+      color: var(--muted);
+    }
+    .role-meta span { display: flex; align-items: center; gap: 4px; }
+
+    .progress-bar {
+      margin-top: 14px;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--muted);
+    }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.5; }
+    .empty-state p { font-size: 0.9rem; line-height: 1.6; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px;
+      width: 100%; max-width: 440px;
+      animation: scaleIn 0.2s ease;
+    }
+    @keyframes scaleIn {
+      from { opacity:0; transform: scale(0.94); }
+      to   { opacity:1; transform: scale(1); }
+    }
+    .modal h2 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      margin-bottom: 8px;
+    }
+    .modal p { color: var(--muted); font-size: 0.88rem; margin-bottom: 28px; line-height: 1.6; }
+    .modal-actions { display: flex; gap: 12px; }
+    .modal-actions .btn { flex: 1; justify-content: center; }
+
+    .role-highlight {
+      display: inline-block;
+      background: rgba(245,166,35,0.12);
+      border: 1px solid rgba(245,166,35,0.3);
+      border-radius: 6px;
+      padding: 2px 8px;
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; bottom: 28px; right: 28px; z-index: 200;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 0.85rem;
+      display: flex; align-items: center; gap: 10px;
+      transform: translateY(80px); opacity: 0;
+      transition: all 0.25s ease;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.4);
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 18px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .footer-left { display: flex; align-items: center; gap: 6px; }
+
+    @media (max-width: 600px) {
+      header { padding: 16px 20px; }
+      .hero, .content-area { padding-left: 20px; padding-right: 20px; }
+      .hero { padding-top: 48px; }
+      .hero h1 { font-size: 2.2rem; }
+      .input-row { flex-direction: column; }
+      footer { padding: 16px 20px; flex-direction: column; gap: 6px; text-align: center; }
+    }
+  </style>
 </head>
 <body>
 
-<h1>Placement Prep Tracker</h1>
+<div class="page-wrap">
 
-<!-- ADD ROLE -->
-<input id="roleInput" placeholder="Role name">
-<button onclick="addRole()">Add Role</button>
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🎯</div>
+      Prep<span>Pal</span>
+    </div>
+    <div class="header-meta">
+      <div class="dot"></div>
+      <span id="headerStats">0 roles tracked</span>
+    </div>
+  </header>
 
-<ul id="roleList"></ul>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-eyebrow">Interview Prep Tracker</div>
+    <h1>Own every<br/><em>interview.</em></h1>
+    <p class="hero-sub">Track what you've prepared, pick up where you left off, and never walk into a room underprepared again.</p>
+  </section>
 
-<hr>
+  <!-- MAIN CONTENT -->
+  <main class="content-area">
 
-<!-- APPLICATION -->
-<h3>Add Application</h3>
-<input id="roleIdApp" placeholder="Role ID">
-<input id="company" placeholder="Company">
-<input id="status" placeholder="Status">
-<input id="date" type="date">
-<button onclick="addApplication()">Add</button>
+    <!-- NEW ROLE CARD -->
+    <div class="card">
+      <div class="card-label">Start a new role prep</div>
+      <div class="input-row">
+        <input
+          type="text"
+          id="roleInput"
+          class="role-input"
+          placeholder="e.g. Product Manager, Data Scientist, SWE…"
+          autocomplete="off"
+          maxlength="60"
+        />
+        <button class="btn btn-primary" onclick="handleNewRole()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Begin Prep
+        </button>
+      </div>
+      <div class="suggestions" id="suggestions">
+        <div class="suggestion-chip" onclick="fillRole('Software Engineer')">Software Engineer</div>
+        <div class="suggestion-chip" onclick="fillRole('Product Manager')">Product Manager</div>
+        <div class="suggestion-chip" onclick="fillRole('Data Scientist')">Data Scientist</div>
+        <div class="suggestion-chip" onclick="fillRole('UX Designer')">UX Designer</div>
+        <div class="suggestion-chip" onclick="fillRole('Backend Developer')">Backend Developer</div>
+        <div class="suggestion-chip" onclick="fillRole('ML Engineer')">ML Engineer</div>
+      </div>
+    </div>
 
-<hr>
+    <!-- EXISTING ROLES -->
+    <div>
+      <div class="section-header">
+        <div class="section-title">Continue your prep</div>
+        <div class="badge" id="roleCount">0 roles</div>
+      </div>
+      <div class="roles-grid" id="rolesGrid">
+        <!-- populated by JS -->
+      </div>
+    </div>
 
-<!-- DAILY PREP -->
-<h3>Daily Prep</h3>
-<input id="roleIdPrep" placeholder="Role ID">
-<input id="prepDate" type="date">
-<input id="dsa" placeholder="DSA solved">
-<input id="subjects" placeholder="Subjects">
-<input id="hours" placeholder="Hours">
-<button onclick="addPrep()">Add</button>
+  </main>
+
+  <footer>
+    <div class="footer-left">
+      <span>PrepPal</span>
+      <span>·</span>
+      <span>All data stored locally</span>
+    </div>
+    <span id="lastSession"></span>
+  </footer>
+
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <h2>Delete role?</h2>
+    <p>All prep data for <span class="role-highlight" id="deleteRoleName"></span> will be permanently removed. This cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-dot"></div>
+  <span id="toastMsg">Saved!</span>
+</div>
 
 <script src="script.js"></script>
+<script src="analytics.js"></script>
+<script>
+  // ── Page init ──
+  document.addEventListener('DOMContentLoaded', () => {
+    renderRoles();
+    updateHeaderStats();
+    analytics.trackPageView('index');
+    updateLastSession();
+
+    // Enter key on input
+    document.getElementById('roleInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleNewRole();
+    });
+  });
+
+  function renderRoles() {
+    const grid = document.getElementById('rolesGrid');
+    const roles = PrepData.getRoles();
+    const count = document.getElementById('roleCount');
+    count.textContent = `${roles.length} role${roles.length !== 1 ? 's' : ''}`;
+    document.getElementById('headerStats').textContent = `${roles.length} role${roles.length !== 1 ? 's' : ''} tracked`;
+
+    if (roles.length === 0) {
+      grid.innerHTML = `
+        <div class="empty-state" style="grid-column: 1 / -1;">
+          <div class="empty-icon">📋</div>
+          <p>No roles yet.<br/>Add one above to start tracking your prep.</p>
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = roles.map((role, i) => {
+      const items = PrepData.getItems(role.id);
+      const done  = items.filter(x => x.status === 'done').length;
+      const pct   = items.length ? Math.round((done / items.length) * 100) : 0;
+      const icons = { default:'💼', engineering:'⚙️', design:'🎨', data:'📊', product:'🧩', manager:'📋', ml:'🤖', lead:'🏆' };
+      const iconKey = Object.keys(icons).find(k => role.name.toLowerCase().includes(k)) || 'default';
+      return `
+        <div class="role-card" style="animation-delay:${i * 0.06}s" onclick="openRole('${role.id}')">
+          <div class="role-card-header">
+            <div class="role-icon">${icons[iconKey]}</div>
+            <div class="role-card-actions" onclick="event.stopPropagation()">
+              <button class="btn btn-sm btn-danger" onclick="askDelete('${role.id}','${escHtml(role.name)}')">✕</button>
+            </div>
+          </div>
+          <div class="role-name">${escHtml(role.name)}</div>
+          <div class="role-meta">
+            <span>📝 ${items.length} item${items.length !== 1 ? 's' : ''}</span>
+            <span>✅ ${done} done</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${pct}%"></div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function handleNewRole() {
+    const input = document.getElementById('roleInput');
+    const name  = input.value.trim();
+    if (!name) { input.focus(); return; }
+
+    const existing = PrepData.getRoles().find(r => r.name.toLowerCase() === name.toLowerCase());
+    if (existing) {
+      openRole(existing.id);
+      return;
+    }
+    const role = PrepData.createRole(name);
+    analytics.trackEvent('role_created', { name });
+    input.value = '';
+    openRole(role.id);
+  }
+
+  function fillRole(name) {
+    const input = document.getElementById('roleInput');
+    input.value = name;
+    input.focus();
+  }
+
+  function openRole(id) {
+    analytics.trackEvent('role_opened', { id });
+    window.location.href = `dashboard.html?role=${id}`;
+  }
+
+  let _deleteTarget = null;
+  function askDelete(id, name) {
+    _deleteTarget = id;
+    document.getElementById('deleteRoleName').textContent = name;
+    document.getElementById('deleteModal').classList.add('open');
+  }
+  function closeModal() {
+    document.getElementById('deleteModal').classList.remove('open');
+    _deleteTarget = null;
+  }
+  function confirmDelete() {
+    if (!_deleteTarget) return;
+    PrepData.deleteRole(_deleteTarget);
+    analytics.trackEvent('role_deleted', { id: _deleteTarget });
+    closeModal();
+    renderRoles();
+    showToast('Role deleted');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  function updateLastSession() {
+    const last = analytics.getLastSession();
+    const el = document.getElementById('lastSession');
+    if (last) el.textContent = `Last session: ${last}`;
+  }
+
+  function escHtml(str) {
+    return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // Close modal on overlay click
+  document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+</script>
+
 </body>
 </html>

@@ -1,60 +1,207 @@
-const API = "http://127.0.0.1:5000";
+/**
+ * PrepPal — Data Layer (script.js)
+ * All data is persisted to localStorage under the key 'preppal_v1'
+ *
+ * Data shape:
+ * {
+ *   roles: {
+ *     [id]: { id, name, createdAt, lastAccessedAt }
+ *   },
+ *   items: {
+ *     [roleId]: [
+ *       { id, title, type, status, note, createdAt, updatedAt }
+ *     ]
+ *   }
+ * }
+ */
 
-async function addRole() {
-    const role = document.getElementById("roleInput").value;
+const PrepData = (() => {
+  const KEY = 'preppal_v1';
 
-    await fetch(`${API}/add_role`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({role_name: role})
-    });
+  // ─────────────────────────────────────────────
+  // Internal helpers
+  // ─────────────────────────────────────────────
 
-    loadRoles();
-}
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      return raw ? JSON.parse(raw) : { roles: {}, items: {} };
+    } catch {
+      return { roles: {}, items: {} };
+    }
+  }
 
-async function loadRoles() {
-    const res = await fetch(`${API}/roles`);
-    const data = await res.json();
+  function save(db) {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(db));
+    } catch (e) {
+      console.warn('PrepPal: could not save data.', e);
+    }
+  }
 
-    const list = document.getElementById("roleList");
-    list.innerHTML = "";
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
 
-    data.forEach(r => {
-        const li = document.createElement("li");
-        li.innerText = `${r.id} - ${r.role_name}`;
-        list.appendChild(li);
-    });
-}
+  // ─────────────────────────────────────────────
+  // Role operations
+  // ─────────────────────────────────────────────
 
-async function addApplication() {
-    const data = {
-        role_id: document.getElementById("roleIdApp").value,
-        company: document.getElementById("company").value,
-        status: document.getElementById("status").value,
-        date: document.getElementById("date").value
+  /**
+   * Returns all roles sorted by lastAccessedAt (most recent first).
+   */
+  function getRoles() {
+    const db = load();
+    return Object.values(db.roles).sort((a, b) => b.lastAccessedAt - a.lastAccessedAt);
+  }
+
+  /**
+   * Returns a single role by id, or null.
+   */
+  function getRole(id) {
+    const db = load();
+    return db.roles[id] || null;
+  }
+
+  /**
+   * Creates a new role and returns it.
+   */
+  function createRole(name) {
+    const db  = load();
+    const id  = uid();
+    const now = Date.now();
+    const role = { id, name: name.trim(), createdAt: now, lastAccessedAt: now };
+    db.roles[id] = role;
+    db.items[id] = [];
+    save(db);
+    return role;
+  }
+
+  /**
+   * Updates lastAccessedAt for a role (call when user opens dashboard).
+   */
+  function touchRole(id) {
+    const db = load();
+    if (db.roles[id]) {
+      db.roles[id].lastAccessedAt = Date.now();
+      save(db);
+    }
+  }
+
+  /**
+   * Deletes a role and all its items.
+   */
+  function deleteRole(id) {
+    const db = load();
+    delete db.roles[id];
+    delete db.items[id];
+    save(db);
+  }
+
+  // ─────────────────────────────────────────────
+  // Item operations
+  // ─────────────────────────────────────────────
+
+  /**
+   * Returns all items for a role, preserving insertion order (most recent last).
+   */
+  function getItems(roleId) {
+    const db = load();
+    return (db.items[roleId] || []).slice();
+  }
+
+  /**
+   * Returns a single item by id from a role's list.
+   */
+  function getItem(roleId, itemId) {
+    return getItems(roleId).find(x => x.id === itemId) || null;
+  }
+
+  /**
+   * Adds an item to a role.
+   * @param {string} roleId
+   * @param {{ title: string, type: string }} data
+   */
+  function addItem(roleId, { title, type = 'topic' }) {
+    const db  = load();
+    const now = Date.now();
+    const item = {
+      id:        uid(),
+      title:     title.trim(),
+      type,                        // 'question' | 'topic' | 'note' | 'resource' | 'mock'
+      status:    'pending',        // 'pending' | 'review' | 'done'
+      note:      '',
+      createdAt:  now,
+      updatedAt:  now,
     };
+    if (!db.items[roleId]) db.items[roleId] = [];
+    db.items[roleId].push(item);
+    if (db.roles[roleId]) db.roles[roleId].lastAccessedAt = now;
+    save(db);
+    return item;
+  }
 
-    await fetch(`${API}/add_application`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(data)
-    });
-}
-
-async function addPrep() {
-    const data = {
-        role_id: document.getElementById("roleIdPrep").value,
-        date: document.getElementById("prepDate").value,
-        dsa: document.getElementById("dsa").value,
-        subjects: document.getElementById("subjects").value,
-        hours: document.getElementById("hours").value
+  /**
+   * Partially updates an item's fields.
+   * @param {string} roleId
+   * @param {string} itemId
+   * @param {Partial<item>} patch
+   */
+  function updateItem(roleId, itemId, patch) {
+    const db = load();
+    if (!db.items[roleId]) return;
+    const idx = db.items[roleId].findIndex(x => x.id === itemId);
+    if (idx === -1) return;
+    db.items[roleId][idx] = {
+      ...db.items[roleId][idx],
+      ...patch,
+      updatedAt: Date.now(),
     };
+    save(db);
+  }
 
-    await fetch(`${API}/add_prep`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(data)
-    });
-}
+  /**
+   * Deletes an item from a role.
+   */
+  function deleteItem(roleId, itemId) {
+    const db = load();
+    if (!db.items[roleId]) return;
+    db.items[roleId] = db.items[roleId].filter(x => x.id !== itemId);
+    save(db);
+  }
 
-loadRoles();
+  // ─────────────────────────────────────────────
+  // Export: bulk data for analytics/export
+  // ─────────────────────────────────────────────
+
+  function exportAll() {
+    return load();
+  }
+
+  function importAll(data) {
+    if (data && data.roles && data.items) {
+      save(data);
+      return true;
+    }
+    return false;
+  }
+
+  // ─────────────────────────────────────────────
+  // Public API
+  // ─────────────────────────────────────────────
+
+  return {
+    getRoles,
+    getRole,
+    createRole,
+    touchRole,
+    deleteRole,
+    getItems,
+    getItem,
+    addItem,
+    updateItem,
+    deleteItem,
+    exportAll,
+    importAll,
+  };
+})();

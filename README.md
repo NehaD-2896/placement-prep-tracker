@@ -26,3 +26,8 @@ A comprehensive web application designed to help students and developers organiz
 1. **Clone the repo:**
    ```bash
    git clone [https://github.com/NehaD-2896/placement-prep-tracker.git](https://github.com/NehaD-2896/placement-prep-tracker.git)
+
+
+## 🚀 Live Demo
+(https://nehad-2896.github.io/placement-prep-tracker)
+
